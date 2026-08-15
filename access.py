@@ -4,6 +4,10 @@ from model import *
 from helper_functions import *
 
 
+import matplotlib.pyplot as plt
+from torchmetrics import ConfusionMatrix
+from mlxtend.plotting import plot_confusion_matrix
+
 device = 'cuda' if torch.cuda.is_available() else "cpu"
 
 
@@ -28,7 +32,7 @@ elif fruit == 'strawberry':
 elif fruit == 'tomato':
     from image_data.tomato_data import *
 else:
-    print(f"No available data for {fruit}. Aborting...")
+    print(f"No available data for '{fruit}'. Aborting...")
     exit()
 
 model = Disease_Classifier(3, 64, len(class_names)).to(device)
@@ -38,13 +42,17 @@ loss_fn = nn.CrossEntropyLoss()
 opt = torch.optim.Adam(params = model.parameters(),
                        lr = 0.001)
 
+try:
+    model.load_state_dict(torch.load(MODEL_SAVE_PATH, weights_only=True))
+    print(f"\nLoaded saved '{fruit}' model.")
+except FileNotFoundError:
+    print(f"\n{fruit} model not found. Starting untrained model...")
 
-model.load_state_dict(torch.load(MODEL_SAVE_PATH, weights_only=True))
 print(f"\nCurrent '{fruit}' model state:")
 test_model(model, test_batches, loss_fn, accuracy_fn)
 
 
-task = input(f"\nHow would you like to interact with '{fruit}' Disease Classifier? \n1. Predict a fruit's condition('pred')  \n2. Train Model and evaluate('train')\n-> ")
+task = input(f"\nHow would you like to interact with '{fruit}' Disease Classifier? \n1. Predict a fruit's condition('pred')  \n2. Evaluate model('eval') \n3. Train model and evaluate('train')\n-> ")
 
 
 
@@ -67,6 +75,18 @@ elif task == 'train':
 
     torch.save(model.state_dict(), MODEL_SAVE_PATH)
     print(f"Model saved to {MODEL_SAVE_PATH}")
+
+elif task == 'eval':
+    print(f"\nEvaluating '{fruit}' Disease Classifier Model...")
+    test_results = test_model(model,test_batches,loss_fn,accuracy_fn)
+    print("\nPlotting Confusion Matrix...")
+    preds = test_results[0]
+    target = test_results[1]
+    confmat = ConfusionMatrix(num_classes = len(class_names), task = "multiclass")
+    confmat_tensor = confmat(preds = preds, target = target)
+    fig, ax = plot_confusion_matrix(conf_mat = confmat_tensor.numpy(), class_names = class_names)
+    plt.title(f"{fruit} Disease Classifier Test Results")
+    plt.show()
 
 else:
     print("Invalid command. Aborting...")
