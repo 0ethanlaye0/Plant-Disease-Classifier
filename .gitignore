@@ -216,3 +216,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+#Ethan's ignore
+models/
+images/
+__pycache__/
+archive.zip
+main.py
+
