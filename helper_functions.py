@@ -1,4 +1,4 @@
-"""Contains Relevant """
+"""Contains Relevant Helper Functions"""
 
 import torch
 from PIL import Image
@@ -9,7 +9,7 @@ from torchvision import transforms
 device = 'cuda' if torch.cuda.is_available() else "cpu"
 
 def accuracy_fn(y_pred, y_true):
-    summ = sum(torch.eq(y_pred, y_true))
+    summ = torch.eq(y_pred, y_true).sum()
     return (summ / len(y_pred)) * 100
 
 def train_model(model: torch.nn.Module,
