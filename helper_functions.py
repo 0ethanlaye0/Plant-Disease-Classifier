@@ -17,12 +17,15 @@ def train_model(model: torch.nn.Module,
                 loss_fn: torch.nn.Module,
                 accuracy_fn,
                 opt: torch.optim.Optimizer):
+    all_preds, all_labels = [], []
     model.train()
     train_loss, train_acc = 0, 0
     for imgs, labels in data_loader:
         imgs, labels = imgs.to(device), labels.to(device)
         logits = model(imgs)
         preds = torch.argmax(torch.softmax(logits, dim=1), dim=1)
+        all_preds += preds
+        all_labels += labels
         loss = loss_fn(logits, labels)
         train_loss += loss
         acc = accuracy_fn(preds, labels)
@@ -33,11 +36,13 @@ def train_model(model: torch.nn.Module,
     train_loss /= len(data_loader)
     train_acc /= len(data_loader)
     print(f"Train Loss: {train_loss:.3f} | Train Acc: {train_acc:.2f}%")
+    return [all_preds, all_labels]
 
 def test_model(model: torch.nn.Module,
                 data_loader:torch.utils.data.DataLoader,
                 loss_fn: torch.nn.Module,
                 accuracy_fn):
+    all_preds, all_labels = [], []
     model.eval()
     with torch.inference_mode():
         test_loss, test_acc = 0, 0
@@ -45,6 +50,8 @@ def test_model(model: torch.nn.Module,
             imgs, labels = imgs.to(device), labels.to(device)
             logits = model(imgs)
             preds = torch.argmax(torch.softmax(logits, dim=1), dim=1)
+            all_preds.append(preds)
+            all_labels.append(labels)
             loss = loss_fn(logits, labels)
             test_loss += loss
             acc = accuracy_fn(preds, labels)
@@ -52,6 +59,7 @@ def test_model(model: torch.nn.Module,
         test_loss /= len(data_loader)
         test_acc /= len(data_loader)
     print(f"Test Loss: {test_loss:.3f} | Test Acc: {test_acc:.2f}%")
+    return [torch.cat(all_preds), torch.cat(all_labels)]
 
 def predict(img_path: Path,
             model: torch.nn.Module,
